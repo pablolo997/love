@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aubrey's 24th Birthday</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: rgb(209, 54, 189);
+      color: white;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 20px;
+    }
+
+    .memory-list {
+      max-width: 900px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 20px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    .memory-item {
+      margin-bottom: 40px;
+    }
+
+    .memory-title {
+      color: pink;
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .memory-caption {
+      margin-top: 10px;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.2);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    img, video {
+      max-width: 100%;
+      border-radius: 15px;
+      border: 3px solid rgba(255,255,255,0.5);
+    }
+
+    video {
+      background: black;
+    }
+
+    canvas#confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Aug 14th, 2025</h1>
+
+  <div class="memory-list">
+
+    <div class="memory-item">
+      <div class="memory-title">Cookie Cake!!!</div>
+      <img src="bday24/cake.jpg" alt="Cookie Cake">
+      <div class="memory-caption">It's so pretty!! I got pink candles like u wanted ^_^. I love you!</div>
+    </div>
+
+    <div class="memory-item">
+      <div class="memory-title">Happy Birthday to you!</div>
+      <video controls>
+        <source src="bday24/happy_birthday.mp4" type="video/mp4">
+      </video>
+      <div class="memory-caption">LOL IM KINDA QUIET CUZ I WAS SHY TO DO IT BECAUSE MY FAMILY WAS HOME.</div>
+    </div>
+
+    <div class="memory-item">
+      <div class="memory-title">Blow out the candles!!!</div>
+      <video controls preload="auto">
+        <source src="bday24/blow_candles.mp4" type="video/mp4">
+      </video>
+      <div class="memory-caption">I'm the one blowing them so i made the wish for you LOL can you guess what i wished for?!</div>
+    </div>
+
+    <div class="memory-item">
+      <div class="memory-title">YUMMY!!</div>
+      <img src="bday24/yummy.jpg" alt="Yummy Cookie Cake">
+      <div class="memory-caption">It was actually the best cookie cake i've ever had in my life. omg im so excited to eat one with you some day!</div>
+    </div>
+
+  </div>
+
+  <!-- Birthday audio -->
+  <audio autoplay>
+    <source src="bday24/bday.mp3" type="audio/mpeg">
+  </audio>
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <script>
+    // Confetti effect
+    const canvas = document.getElementById('confettiCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const confettiCount = 150;
+    const confetti = [];
+
+    function randomColor() {
+      const colors = ['#ff0', '#0f0', '#0ff', '#f0f', '#ff8080', '#80ff80', '#8080ff', '#ffff80', '#ff80ff', '#80ffff'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function createConfetti() {
+      for (let i = 0; i < confettiCount; i++) {
+        confetti.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * -canvas.height,
+          r: Math.random() * 6 + 4,
+          d: Math.random() * confettiCount,
+          color: randomColor(),
+          tilt: Math.random() * 10 - 10,
+          tiltAngleIncrement: Math.random() * 0.07 + 0.05,
+          tiltAngle: 0
+        });
+      }
+    }
+
+    function drawConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      confetti.forEach((c) => {
+        ctx.beginPath();
+        ctx.fillStyle = c.color;
+        ctx.ellipse(c.x, c.y, c.r, c.r / 2, c.tiltAngle, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+      updateConfetti();
+    }
+
+    function updateConfetti() {
+      confetti.forEach((c, i) => {
+        c.tiltAngle += c.tiltAngleIncrement;
+        c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
+        c.x += Math.sin(c.d);
+        c.tilt = Math.sin(c.tiltAngle) * 15;
+
+        if (c.y > canvas.height) {
+          confetti[i] = {
+            x: Math.random() * canvas.width,
+            y: -10,
+            r: c.r,
+            d: c.d,
+            color: c.color,
+            tilt: c.tilt,
+            tiltAngleIncrement: c.tiltAngleIncrement,
+            tiltAngle: c.tiltAngle
+          };
+        }
+      });
+    }
+
+    function animateConfetti() {
+      drawConfetti();
+      requestAnimationFrame(animateConfetti);
+    }
+
+    createConfetti();
+    animateConfetti();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+
+</body>
+</html>

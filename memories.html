@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memories</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: rgb(209, 54, 189); /* pink */
+      color: white;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 20px;
+    }
+
+    .timer {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .timer div {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 20px;
+      border-radius: 10px;
+      min-width: 100px;
+    }
+
+    .memory-list {
+      max-width: 600px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 20px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    .memory-header {
+      color: pink;
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .memory-item {
+      margin-bottom: 20px;
+    }
+
+    .memory-link {
+      display: inline-block;
+      padding: 8px 15px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 10px;
+      color: rgb(209, 54, 189);
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .memory-link:hover {
+      background: white;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>We've been in love for:</h1>
+  <div class="timer">
+    <div><span id="years">0</span> Years</div>
+    <div><span id="months">0</span> Months</div>
+    <div><span id="days">0</span> Days</div>
+  </div>
+
+  <div class="memory-list">
+    <div class="memory-header">Lovely Memories!!</div>
+
+    <div class="memory-item">
+      <a href="discord-memories.html" class="memory-link">Discord Memories</a>
+    </div>
+
+    <div class="memory-item">
+      <a href="bday24.html" class="memory-link">Aubrey's 24th Birthday</a>
+    </div>
+  </div>
+
+  <audio autoplay loop>
+    <source src="music/memories.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    function updateTimer() {
+      const startDate = new Date("July 20, 2025");
+      const now = new Date();
+      
+      let years = now.getFullYear() - startDate.getFullYear();
+      let months = now.getMonth() - startDate.getMonth();
+      let days = now.getDate() - startDate.getDate();
+
+      if (days < 0) {
+        months--;
+        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      document.getElementById("years").textContent = years;
+      document.getElementById("months").textContent = months;
+      document.getElementById("days").textContent = days;
+    }
+
+    setInterval(updateTimer, 1000 * 60 * 60); // update every hour
+    updateTimer();
+  </script>
+
+</body>
+</html>

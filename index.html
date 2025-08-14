@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heart Loop</title>
+  <link rel="stylesheet" href="love.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Pacifico&family=Dancing+Script:wght@400;600&family=Parisienne&display=swap" rel="stylesheet">
+</head>
+
+<nav class="side-menu" id="sideMenu">
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">❤</button>
+  <div class="menu-inner">
+    <a href="you_and_me.html" class="menu-link gradient-text">You and me</a>
+    <a href="be_okay.html" class="menu-link gradient-text">It’ll be okay</a>
+    <a href="memories.html" class="menu-link gradient-text">Memories</a>
+  </div>
+</nav>
+
+<div class="music-player">
+  <audio id="bg-music" src="music/main.mp3" autoplay loop></audio>
+  <button id="play-pause-btn">▶</button>
+  <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.5">
+</div>
+
+<body>
+  <audio id="pop-sound" src="music/pop.mp3" preload="auto"></audio>
+  <canvas id="bubble-canvas"></canvas>
+
+
+  <div class="control-panel glassy">
+    <div class="control-row">
+      <label class="gradient-text" for="color-mode-select">Color Mode</label>
+      <select id="color-mode-select" class="pretty-select">
+        <option value="uniform">Uniform</option>
+        <option value="rainbow-random">Rainbow Random</option>
+        <option value="rainbow-uniform">Rainbow Uniform</option>
+      </select>
+    </div>
+
+    <div class="control-row">
+      <label class="gradient-text" for="outline-mode-select">Outline Mode</label>
+      <select id="outline-mode-select" class="pretty-select">
+        <option value="light">Light</option>
+        <option value="light extra">Light Extra</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+  </div>
+
+
+
+  <div class="love-note font-parisienne">
+    <div class="float">
+      <div class="line">Paul</div>
+      <div class="line plus">&</div>
+      <div class="line">Aubrey</div>
+      <div class="line forever">Forever</div>
+    </div>
+  </div>
+
+
+  <div class="heart-cloud" id="inner-heart-ring"></div>
+  <div class="heart-cloud outer-ring" id="outer-heart-ring"></div>
+
+<script>
+  /* DOM refs */
+  const innerContainer   = document.getElementById("inner-heart-ring");
+  const outerContainer   = document.getElementById("outer-heart-ring");
+  const colorSelect      = document.getElementById("color-mode-select");
+  const outlineSelect    = document.getElementById("outline-mode-select");
+
+  /* Ring configs */
+  const inner = { count: 40, duration: 16 };
+  const outer = { count: 50, duration: 20 };
+  const fadeGapMs = 100;          // delay between hearts fading in
+  const fadeDuration = 0.5;       // seconds
+
+  /* Map outline option → image file */
+  const imgSrc = {
+    dark:        "img/heart.png",
+    light:       "img/heart2.png",
+    "light extra":"img/heart3.png"
+  };
+
+  /** create one <img> heart */
+  function makeHeart({ ring, idx, img, colorMode, includeFade, isOuter }) {
+    const h = document.createElement("img");
+    h.src = img;
+    h.className = `heart${isOuter ? " big-heart" : ""}`;
+
+    /* orbit offset (negative so they start spaced) */
+    const orbitDelay = -(idx * ring.duration / ring.count);
+    const pulseDelay = `${Math.random() * 2}s`;
+
+    /* fade-in only on first render */
+    const fadeDelay = includeFade ? `${idx * fadeGapMs/1000 + (isOuter ? inner.count*fadeGapMs/1000 : 0)}s` : null;
+
+    /* colour mode */
+    const colorAnim =
+      colorMode === "uniform"
+        ? null
+        : `colorFade 10s linear infinite ${colorMode==="rainbow-random"?`${Math.random()*10}s`:"0s"}`;
+
+    /* assemble animation list */
+    const animations = [
+      `orbit ${ring.duration}s linear infinite${isOuter ? "" : " reverse"} ${orbitDelay}s`,
+      `pulse 2s ease-in-out infinite ${pulseDelay}`,
+      colorAnim
+    ].filter(Boolean);             // remove nulls
+
+    if (includeFade) {
+      animations.push(`fadeIn ${fadeDuration}s ease ${fadeDelay} forwards`);
+      h.style.opacity = 0;         // start invisible
+    }
+
+    h.style.animation = animations.join(", ");
+    return h;
+  }
+
+  /** rebuild both rings; includeFade only on initial load */
+  function buildScene(includeFade) {
+    innerContainer.textContent = "";
+    outerContainer.textContent = "";
+
+    const mode  = colorSelect.value;
+    const image = imgSrc[outlineSelect.value];
+
+    for (let i = 0; i < inner.count; i++) {
+      innerContainer.appendChild(
+        makeHeart({ ring: inner, idx: i, img: image, colorMode: mode, includeFade, isOuter: false })
+      );
+    }
+    for (let i = 0; i < outer.count; i++) {
+      outerContainer.appendChild(
+        makeHeart({ ring: outer, idx: i, img: image, colorMode: mode, includeFade, isOuter: true })
+      );
+    }
+  }
+
+  /* first paint with fade-in */
+  window.addEventListener("DOMContentLoaded", () => buildScene(true));
+
+  /* dropdown handlers — no fade-in on updates */
+  colorSelect.addEventListener("change", () => buildScene(false));
+  outlineSelect.addEventListener("change", () => buildScene(false));
+
+  const audio = document.getElementById("bg-music");
+  const playPauseBtn = document.getElementById("play-pause-btn");
+  const volumeSlider = document.getElementById("volume-slider");
+
+  // Play/pause toggle
+  playPauseBtn.addEventListener("click", () => {
+    if (audio.paused) {
+      audio.play();
+      playPauseBtn.textContent = "⏸";
+    } else {
+      audio.pause();
+      playPauseBtn.textContent = "▶";
+    }
+  });
+
+  // Volume control
+  volumeSlider.addEventListener("input", (e) => {
+    audio.volume = e.target.value;
+  });
+
+  // Optional: set default volume
+  audio.volume = 0.5;
+
+const canvas = document.getElementById("bubble-canvas");
+const ctx = canvas.getContext("2d");
+const popSound = document.getElementById("pop-sound");
+
+/* voice lines for GOLDEN bubbles */
+const goldenClips = [
+  "music/baka.mp3",
+  "music/bounce.mp3",
+  "music/hopeful.mp3",
+  "music/husband.mp3",
+  "music/idk.mp3",
+  "music/wow.mp3"
+];
+
+/* normal affirmations list (with emojis) */
+const affirmations = [
+  "Best girl ever! 💖",
+  "My wife! 💍",
+  "Love of my life! ❤️",
+  "My darling! 💕",
+  "My angel! 😇",
+  "My Princess! 👑",
+  "My Special girl 🌸",
+  "My Sweet baby 🐻",
+  "Good girl! 🐱",
+  "You're all mine!! >:3 😘",
+  "I'm all yours!! 😳"
+];
+
+/* config */
+const GOLDEN_CHANCE = 0.01;     // 1 in 100
+const START_BUBBLES = 10;       // initial count
+
+/* canvas sizing */
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+let bubbles = [];
+let miniBubbles = [];
+
+/* ====== classes ====== */
+class Bubble {
+  constructor() { this.reset(true); }
+  reset(initial = false) {
+    this.isGolden = Math.random() < GOLDEN_CHANCE;
+    this.radius = (this.isGolden ? 18 : 10) + Math.random() * (this.isGolden ? 18 : 20);
+    this.x = Math.random() * canvas.width;
+    this.y = (initial ? canvas.height + Math.random()*canvas.height*0.5 : canvas.height + this.radius);
+    this.speed = 0.5 + Math.random() * 1;
+    this.swaySpeed = 0.4 + Math.random() * 0.8;
+    this.swayAmount = 18 + Math.random() * 14;
+    this.offset = Math.random() * Math.PI * 2;
+    this.opacity = this.isGolden ? 0.55 : (0.3 + Math.random()*0.4);
+  }
+  update(t) {
+    this.y -= this.speed;
+    this.x += Math.sin(t*this.swaySpeed + this.offset) * 0.35;
+    if (this.y + this.radius < 0) this.reset();
+  }
+  draw() {
+    if (this.isGolden) {
+      // shiny gold gradient + soft glow
+      const g = ctx.createRadialGradient(this.x - this.radius*0.3, this.y - this.radius*0.4, this.radius*0.1, this.x, this.y, this.radius);
+      g.addColorStop(0, `rgba(255,250,200,${this.opacity})`);
+      g.addColorStop(0.6, `rgba(255,215,100,${this.opacity})`);
+      g.addColorStop(1, `rgba(220,160,40,${this.opacity})`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255,240,160,${this.opacity+0.2})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      // halo
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius+4, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(255,215,0,0.15)`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${this.opacity})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255,255,255,${this.opacity + 0.2})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+}
+
+class MiniBubble {
+  constructor(x, y, golden=false) {
+    this.x = x;
+    this.y = y;
+    this.radius = golden ? (2 + Math.random()*3) : (1.5 + Math.random()*2.5);
+    const speed = golden ? 2.2 : 1.6;
+    this.vx = (Math.random()-0.5) * speed;
+    this.vy = (Math.random()-0.5) * speed;
+    this.life = 1;
+    this.golden = golden;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life -= 0.035;
+  }
+  draw() {
+    if (this.life <= 0) return;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+    ctx.fillStyle = this.golden
+      ? `rgba(255,215,0,${this.life})`
+      : `rgba(255,255,255,${this.life})`;
+    ctx.fill();
+  }
+}
+
+/* ====== helpers ====== */
+function createAffirmation(x, y) {
+  const el = document.createElement("div");
+  el.className = "affirmation";
+  el.textContent = affirmations[Math.floor(Math.random() * affirmations.length)];
+  el.style.left = `${x}px`;
+  el.style.top  = `${y}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+function playRandomGoldenClip() {
+  const src = goldenClips[Math.floor(Math.random() * goldenClips.length)];
+  const a = new Audio(src);
+  a.volume = 1.0;
+  a.play().catch(()=>{});
+}
+
+function popBubble(b) {
+  if (b.isGolden) {
+    // GOLDEN: play random clip, special burst, no affirmation & no pop sound
+    playRandomGoldenClip();
+    for (let i=0;i<16;i++) miniBubbles.push(new MiniBubble(b.x, b.y, true));
+  } else {
+    // Normal: pop sound, affirmation, white burst
+    popSound.currentTime = 0;
+    popSound.play().catch(()=>{});
+    createAffirmation(b.x, b.y);
+    for (let i=0;i<10;i++) miniBubbles.push(new MiniBubble(b.x, b.y, false));
+  }
+  b.reset();
+}
+
+/* click/tap */
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  for (let i=0;i<bubbles.length;i++){
+    const b = bubbles[i];
+    if (Math.hypot(mx-b.x, my-b.y) < b.radius) {
+      popBubble(b);
+      break; // pop only one per click
+    }
+  }
+});
+
+/* animate */
+function animate() {
+  const t = performance.now()/1000;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  bubbles.forEach(b => { b.update(t); b.draw(); });
+  for (let i=miniBubbles.length-1; i>=0; i--){
+    const mb = miniBubbles[i];
+    mb.update(); mb.draw();
+    if (mb.life <= 0) miniBubbles.splice(i,1);
+  }
+  requestAnimationFrame(animate);
+}
+
+/* seed bubbles */
+for (let i=0;i<START_BUBBLES;i++) bubbles.push(new Bubble());
+animate();
+
+
+  // collapsible menu
+  const menu = document.getElementById('sideMenu');
+  const menuToggle = document.getElementById('menuToggle');
+  // start open (optional). Remove this next line if you want it collapsed by default:
+  menu.classList.add('open');
+
+  menuToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+
+  /* gradient fill follows the volume */
+  const setVolCSS = (v) => document.documentElement.style.setProperty('--vol', v);
+  setVolCSS(volumeSlider.value);
+  volumeSlider.addEventListener("input", (e) => setVolCSS(e.target.value));
+
+
+</script>
+
+
+
+</body>
+</html>
