@@ -224,24 +224,17 @@
     <!-- (legacy) intro lyric node not used now, but kept to avoid breaking anything -->
     <div id="lyric" class="lyric" style="display:none;"><span></span></div>
 
-    <!-- dev scrub bar (for testing) -->
-    <div class="devbar" id="devbar">
-      <span id="cur">0:00</span>
-      <input id="scrub" type="range" min="0" max="73" step="0.01" value="0" />
-      <span id="dur">1:13</span>
-    </div>
-
-    <!-- controls (hidden until track ends or autoplay blocked) -->
-    <div class="hud hidden" id="hud">
-      <button id="play" class="btn">▶️ Play</button>
-      <label>Vol <input id="vol" type="range" min="0" max="1" step="0.01" value="0.85"></label>
-      <span id="t">0:00</span>
-    </div>
-
     <!-- outro -->
     <div id="outro" class="outro hidden">I love you Aubrey</div>
 
+    <!-- audio -->
     <audio id="audio" src="music/be_okay.mp3" preload="auto" crossorigin="anonymous"></audio>
+
+    <!-- minimal fallback overlay (only shown if autoplay is blocked) -->
+    <div id="tapToStart"
+         style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,28,44,.78);color:#fff;font-weight:900;letter-spacing:.5px;z-index:20;cursor:pointer;text-align:center;">
+      Tap or click to start
+    </div>
   </div>
 
 <script>
@@ -258,12 +251,12 @@ const INTRO_LINES = [
   { at:  2.0, text: "You're my starlight and",                                dur: 1800, fx: 'normal' },
   { at:  4.0, text: "I'm your skyline",                                       dur: 2200, fx: 'normal' },
   { at:  7.2, text: "Do you blame me?",                                       dur: 2000, fx: 'normal' },
-  { at:  9, text: "I'm glad that we're alive!!!",                              dur: 2200, fx: 'normal' },
-  { at: 11, text: "Your smile",                                             dur: 4000, fx: 'pop'  }, // ✨ special
-  { at: 14, text: "It takes me past the bitterness and broken things",      dur: 4500, fx: 'normal' },
+  { at:  9.0, text: "I'm glad that we're alive!!!",                           dur: 2200, fx: 'normal' },
+  { at: 11.0, text: "Your smile",                                             dur: 4000, fx: 'pop'  }, // ✨ special
+  { at: 14.0, text: "It takes me past the bitterness and broken things",      dur: 4500, fx: 'normal' },
   { at: 19.2, text: "That's my medicine",                                     dur: 2200, fx: 'normal' },
-  { at: 22, text: "That's why",                                             dur: 4000, fx: 'pop'    }, // 💥 special
-  { at: 25, text: "We're running from the city to the open sea",            dur: 4200, fx: 'normal' },
+  { at: 22.0, text: "That's why",                                             dur: 4000, fx: 'pop'    }, // 💥 special
+  { at: 25.0, text: "We're running from the city to the open sea",            dur: 4200, fx: 'normal' },
   { at: 28.5, text: "Since you're here with me",                              dur: 3100, fx: 'normal' }
 ];
 
@@ -284,25 +277,19 @@ const DROP_LINES = [
 ];
 
 /* ======= elements ======= */
-const stage  = document.querySelector('.stage');
-const skyEl  = document.querySelector('.sky');
-const audio  = document.getElementById('audio');
-const hud    = document.getElementById('hud');
-const playBt = document.getElementById('play');
-const vol    = document.getElementById('vol');
-const timeEl = document.getElementById('t');
-const canvas = document.getElementById('stars');
-const ctx    = canvas.getContext('2d');
-const twinkle= document.getElementById('twinkle');
-const scrub  = document.getElementById('scrub');
-const curEl  = document.getElementById('cur');
-const durEl  = document.getElementById('dur');
-const strobe = document.getElementById('strobe');
-const beams  = document.getElementById('beams');
-const bigHeart = document.getElementById('bigHeart');
+const stage   = document.querySelector('.stage');
+const skyEl   = document.querySelector('.sky');
+const audio   = document.getElementById('audio');
+const canvas  = document.getElementById('stars');
+const ctx     = canvas.getContext('2d');
+const twinkle = document.getElementById('twinkle');
+const strobe  = document.getElementById('strobe');
+const beams   = document.getElementById('beams');
+const bigHeart= document.getElementById('bigHeart');
 const outroEl = document.getElementById('outro');
-const fx = document.getElementById('fx');
-const fxc = fx.getContext('2d');
+const fx      = document.getElementById('fx');
+const fxc     = fx.getContext('2d');
+const tap     = document.getElementById('tapToStart');
 
 /* ======= sizing ======= */
 function fitCanvas() {
@@ -390,7 +377,6 @@ function spawnIntroLyric({ text, dur=1800, fx='normal' }){
   const name = fx === 'pop' ? 'popUp' : (fx === 'phase' ? 'phaseUp' : 'floatUpFade');
   el.style.animation = `${name} ${dur}ms ease-out forwards`;
   stage.appendChild(el);
-  // clean up after
   setTimeout(()=> el.remove(), dur + 120);
 }
 
@@ -481,7 +467,6 @@ function dropProgress(t){
 }
 let hearts = [];
 let emitAccumulator = 0;
-
 function heartPath(g, size=22){
   const s = size/16;
   g.beginPath();
@@ -573,37 +558,23 @@ function endOutro(){
 }
 
 /* ======= cues ======= */
-const fired = new Set(); 
+const fired = new Set();
 const CUES = [];
 function addCue(key, at, fn){ CUES.push({ key, at, fn });}
 
 addCue('intro-start', SECTIONS.intro.start, ()=>{ /* intro visuals already active */ });
-
-// intro per-line cues (uses per-lyric durations + fx)
-INTRO_LINES.forEach((c,i)=>{
-  addCue(`intro-line-${i}`, c.at, ()=> spawnIntroLyric(c));
-});
-
-/* buildup (unchanged) */
+INTRO_LINES.forEach((c,i)=> addCue(`intro-line-${i}`, c.at, ()=> spawnIntroLyric(c)));
 addCue('buildup-start', SECTIONS.buildup.start, ()=>{
   fadeStarsOneByOne(2.2, 0.8);
   fadeTwinklesOneByOne(2.2, 0.7);
   spawnBuildupLyrics();
 });
-
-/* drop: start visuals + per-line lyrics */
 addCue('drop-start', SECTIONS.drop.start, ()=>{
   clearBuildupLyrics();
   startDrop();
 });
-DROP_LINES.forEach((c,i)=>{
-  addCue(`drop-line-${i}`, c.at, ()=> spawnDropLyric(c, i));
-});
-
-/* outro */
-addCue('outro-start', SECTIONS.outro.start, ()=>{
-  startOutro();
-});
+DROP_LINES.forEach((c,i)=> addCue(`drop-line-${i}`, c.at, ()=> spawnDropLyric(c, i)));
+addCue('outro-start', SECTIONS.outro.start, ()=> startOutro());
 
 /* ======= main loop ======= */
 let rafId = null;
@@ -633,7 +604,7 @@ function tick(){
   // DROP particles/effects
   if (t >= SECTIONS.drop.start && t < SECTIONS.drop.end){
     const p = dropProgress(t);
-    const base = 18, extra = 1000;               // ~18 → ~108 hearts/sec
+    const base = 18, extra = 1000;
     const rate = base + extra*p;
     emitBurst(dt, rate);
     updateHearts(dt);
@@ -647,7 +618,7 @@ function tick(){
     }
   }
 
-  // safety for scrubbing backward during testing
+  // safety for scrubbing backwards (not used now but keeps visuals consistent)
   if (t < SECTIONS.drop.start && !strobe.classList.contains('hidden')) endDrop();
   if (t < SECTIONS.outro.start && !outroEl.classList.contains('hidden')) endOutro();
 
@@ -659,23 +630,10 @@ function tick(){
     }
   }
 
-  // hud + devbar time
-  timeEl.textContent = fmt(t);
-  scrub.value = t.toFixed(2);
-  curEl.textContent = fmt(t);
-
   rafId = requestAnimationFrame(tick);
 }
-function fmt(sec){
-  const m=Math.floor(sec/60);
-  const s=Math.floor(sec%60).toString().padStart(2,'0');
-  return `${m}:${s}`;
-}
 
-/* ======= playback / UI logic ======= */
-function hideHud(){ hud.classList.add('hidden'); }
-function showHud(){ hud.classList.remove('hidden'); }
-
+/* ======= playback ======= */
 function resetVisualization(){
   if(rafId) cancelAnimationFrame(rafId);
   clearBuildupLyrics();
@@ -687,57 +645,38 @@ function resetVisualization(){
   makeTwinkles();
   audio.currentTime = 0;
   prevPlayT = 0;
-  scrub.value = 0;
-  curEl.textContent = '0:00';
 }
 
 async function startPlayback(){
-  hideHud();
+  resetVisualization();
+  audio.volume = 0.9;
   try{
     await audio.play();
     prevPlayT = audio.currentTime || 0;
     rafId = requestAnimationFrame(tick);
   }catch(err){
-    showHud(); // Autoplay likely blocked
+    // Autoplay likely blocked — show minimal overlay for a single tap/click.
+    tap.style.display = 'flex';
   }
 }
 
-/* events */
-playBt.addEventListener('click', async ()=>{
-  resetVisualization();
-  await startPlayback();
-});
-vol.addEventListener('input', e=> audio.volume = parseFloat(e.target.value));
-audio.volume = parseFloat(vol.value);
-
-audio.addEventListener('loadedmetadata', ()=>{
-  const d = Number.isFinite(audio.duration) ? audio.duration : SECTIONS.outro.end;
-  scrub.max = d.toFixed(2);
-  durEl.textContent = fmt(d);
-});
-
-audio.addEventListener('ended', ()=>{
-  showHud(); // replay option
+/* minimal fallback: click anywhere on overlay to start */
+tap.addEventListener('pointerdown', async ()=>{
+  tap.style.display = 'none';
+  try{
+    await audio.play();
+    prevPlayT = audio.currentTime || 0;
+    rafId = requestAnimationFrame(tick);
+  }catch(e){
+    // If still blocked, show overlay again
+    tap.style.display = 'flex';
+  }
 });
 
-/* devbar seeking */
-let wasPlaying = false;
-scrub.addEventListener('mousedown', ()=> {
-  wasPlaying = !audio.paused;
-  if (wasPlaying) audio.pause();
-});
-scrub.addEventListener('input', e=>{
-  const v = parseFloat(e.target.value || '0');
-  audio.currentTime = v;
-  prevPlayT = v; // avoid a giant dt spike after seeking
-});
-scrub.addEventListener('mouseup', ()=> {
-  if (wasPlaying) audio.play().catch(()=>{ /* ignore */ });
-});
-
-/* attempt autoplay on load; if blocked, HUD appears for manual start */
-window.addEventListener('DOMContentLoaded', async ()=>{
-  await startPlayback();
+/* draw initial sky immediately, then attempt autoplay */
+window.addEventListener('DOMContentLoaded', ()=>{
+  drawStars(0);
+  startPlayback();
 });
 </script>
 </body>
