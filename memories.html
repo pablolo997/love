@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>Memories</title>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
   <style>
     html, body {
       margin: 0;
@@ -16,29 +16,30 @@
     }
 
     h1 {
-      font-size: 2rem;
+      font-size: clamp(1.5rem, 5vw, 2rem);
       margin-top: 20px;
     }
 
     .timer {
       display: flex;
       justify-content: center;
-      gap: 20px;
-      font-size: 1.5rem;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
       font-weight: bold;
       margin-top: 10px;
     }
 
     .timer div {
       background: rgba(255, 255, 255, 0.2);
-      padding: 10px 20px;
+      padding: 10px 15px;
       border-radius: 10px;
-      min-width: 100px;
+      min-width: 80px;
     }
 
     .memory-list {
-      max-width: 600px;
-      margin: 40px auto;
+      max-width: 95%;
+      margin: 30px auto;
       background: rgba(255, 255, 255, 0.2);
       padding: 20px;
       border-radius: 20px;
@@ -47,7 +48,7 @@
 
     .memory-header {
       color: pink;
-      font-size: 1.8rem;
+      font-size: clamp(1.4rem, 5vw, 1.8rem);
       margin-bottom: 20px;
       font-weight: bold;
     }
@@ -58,17 +59,28 @@
 
     .memory-link {
       display: inline-block;
-      padding: 8px 15px;
+      padding: 10px 20px;
       background: rgba(255, 255, 255, 0.7);
       border-radius: 10px;
       color: rgb(209, 54, 189);
       text-decoration: none;
       font-weight: bold;
+      font-size: clamp(1rem, 4vw, 1.1rem);
       transition: background 0.3s;
     }
 
     .memory-link:hover {
       background: white;
+    }
+
+    /* Touch-friendly improvements for mobile */
+    @media (hover: none) and (pointer: coarse) {
+      .memory-link {
+        padding: 12px 24px;
+      }
+      .timer div {
+        padding: 12px 18px;
+      }
     }
   </style>
 </head>
