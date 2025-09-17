@@ -3,9 +3,6 @@
 
 // =========== DOM refs ===========
 const STAGE = document.querySelector('.stage');
-const player = document.getElementById('player');
-const playToggle = document.getElementById('playToggle'); // music only
-const volumeSlider = document.getElementById('volumeSlider');
 const fishSource = document.getElementById('fishSource');
 
 // =========== Session / HUD ===========
@@ -147,7 +144,7 @@ function showEndBanner(){
 }
 
 // =========== Spawn/motion settings (rAF, like bubbles) ===========
-const CONCURRENT_CATS   = 6;     // exact population while running
+const CONCURRENT_CATS   = 5;     // exact population while running
 const SPEED_MIN_PX_S    = 120;
 const SPEED_MAX_PX_S    = 320;   // wider variability on upper bound
 const SPAWN_BAND_VH     = [20, 80];
@@ -324,22 +321,6 @@ function tick(now){
 }
 requestAnimationFrame(tick);
 
-// =========== Music controls (single track) ===========
-const setVolCSS = (v) => document.documentElement.style.setProperty('--vol', v);
-setVolCSS(volumeSlider.value);
-player.volume = parseFloat(volumeSlider.value);
-
-volumeSlider.addEventListener('input', (e) => {
-  const v = parseFloat(e.target.value);
-  player.volume = v; setVolCSS(v);
-});
-
-playToggle.addEventListener('click', async () => {
-  try {
-    if (player.paused) { await player.play(); playToggle.textContent = '⏸'; }
-    else { player.pause(); playToggle.textContent = '▶︎'; }
-  } catch (e) { /* user gesture may be required */ }
-});
 
 // =========== Fish follower & feeding (drop to feed) ===========
 function moveHeldFish(e){ if (!heldFish) return; heldFish.style.left = e.clientX + 'px'; heldFish.style.top = e.clientY + 'px'; }
