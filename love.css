@@ -1,9 +1,11 @@
 /* === Base canvas === */
-html,body{
-  overflow-x:hidden;
-  height:100%;
+html, body{
   margin:0;
-  background:rgb(223,118,209);
+  background: rgb(223,118,209);
+  /* mobile overflow hardening */
+  overflow: hidden;
+  height: 100dvh;
+  overscroll-behavior: none;
 }
 
 /* === Orbiting hearts === */
@@ -56,8 +58,25 @@ html,body{
 @keyframes floatY{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
 
 /* === Bubble canvas & affirmations === */
-#bubble-canvas{ position:fixed; inset:0; width:100%; height:100%; pointer-events:auto; z-index:10; }
-.affirmation{ position:absolute; font-size:1.2rem; color:#fff; text-shadow:0 0 4px rgba(0,0,0,.5); pointer-events:none; animation:fadeUp 1.2s ease-out forwards; white-space:nowrap; }
+#bubble-canvas{
+  position:fixed !important;
+  inset:0;
+  width:100vw;
+  height:100dvh;
+  pointer-events:auto;
+  z-index:10;
+  overflow:hidden;
+  touch-action: manipulation;
+}
+.affirmation{
+  position: fixed;                /* fixed so offscreen text never changes layout */
+  font-size:1.2rem; color:#fff;
+  text-shadow:0 0 4px rgba(0,0,0,.5);
+  pointer-events:none;
+  animation:fadeUp 1.2s ease-out forwards;
+  white-space:nowrap;
+  contain: layout paint;
+}
 @keyframes fadeUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-40px);opacity:0}}
 
 /* === Generic animations === */
@@ -67,7 +86,7 @@ html,body{
 @keyframes orbit{to{offset-distance:100%}}
 @-webkit-keyframes orbit{to{-webkit-offset-distance:100%}}
 
-/* === Side menu === */
+/* === Side menu (opens to the right of the heart) === */
 .side-menu{
   position:fixed;
   top:calc(16px + env(safe-area-inset-top,0));
@@ -82,15 +101,25 @@ html,body{
   box-shadow:0 6px 18px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.4);
   backdrop-filter:blur(8px);
 }
+/* panel pops to the RIGHT of the heart button */
 .menu-inner{
-  width:220px; max-height:70vh; overflow:auto; padding:14px 14px 10px;
-  border-radius:16px; border:1px solid rgba(255,255,255,.55);
-  background:rgba(255,255,255,.18); box-shadow:0 12px 28px rgba(0,0,0,.25);
-  backdrop-filter:blur(10px); transform-origin:left top; transform:scale(1);
-  transition:opacity .25s ease, transform .25s ease; pointer-events:auto;
+  position:absolute;
+  top:0;
+  left:56px;                /* shove panel to the right of the button */
+  width:220px;
+  max-height:70vh;
+  overflow:auto;
+  padding:14px 14px 10px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.55);
+  background:rgba(255,255,255,.18);
+  box-shadow:0 12px 28px rgba(0,0,0,.25);
+  backdrop-filter:blur(10px);
+  transform-origin:left top;
+  transition:opacity .25s ease, transform .25s ease;
+  pointer-events:auto;
 }
-.side-menu:not(.open) .menu-inner{opacity:0;pointer-events:none;transform:scale(.96)}
-.menu-title{margin:0 0 8px;font-size:18px;letter-spacing:.5px;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+.side-menu:not(.open) .menu-inner{opacity:0; pointer-events:none; transform:scale(.96)}
 .menu-link{
   display:block; padding:8px 10px; margin:6px 0; border-radius:10px;
   text-decoration:none; font-weight:600; color:#fff;
@@ -99,21 +128,31 @@ html,body{
 }
 .menu-link:hover{ background:rgba(255,255,255,.16) }
 
-/* === Control panel (Color/Outline) === */
+/* === Control panel (Color + Outline) — bottom-left inline === */
 .control-panel.glassy{
-  position:fixed;
-  top:calc(16px + env(safe-area-inset-top,0));
-  left:50%; transform:translateX(-50%);
-  z-index:1100; /* under menu */
-  display:flex; gap:18px; align-items:center; justify-content:center;
-  padding:10px 14px; border-radius:16px;
+  position: fixed;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0));
+  left:   calc(12px + env(safe-area-inset-left, 0));
+  top: auto; right: auto; transform: none;
+  z-index: 1100;
+
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
   border:1px solid rgba(255,255,255,.55);
   background:rgba(255,255,255,.18);
   box-shadow:0 12px 28px rgba(0,0,0,.25);
-  backdrop-filter:blur(10px);
-  pointer-events:auto;
+  backdrop-filter: blur(10px);
 }
-.control-row{ display:flex; flex-direction:column; align-items:center; }
+.control-row{
+  display: flex;
+  flex-direction: row;      /* label + select inline */
+  align-items: center;
+  gap: 8px;
+}
+.control-row .gradient-text{ white-space: nowrap; }
 
 /* labels */
 .gradient-text{
@@ -147,7 +186,7 @@ html,body{
 /* Make sure UI is interactable over canvas */
 .side-menu, .control-panel, .music-player{ pointer-events:auto; }
 
-/* === Music player (with gradient slider) === */
+/* === Music player (bottom-right, vertical slider, no glass bg) === */
 :root{
   --vol:.5;                          /* updated by JS */
   --vol-accent-1:#ffe47b;            /* yellow */
@@ -155,24 +194,45 @@ html,body{
   --vol-track:rgba(255,255,255,.22); /* glass track */
   --vol-border:rgba(255,255,255,.6);
 }
+
 .music-player{
-  position:fixed;
-  top:calc(15px + env(safe-area-inset-top,0));
-  right:calc(15px + env(safe-area-inset-right,0));
-  display:flex; align-items:center; gap:8px;
-  z-index:1050;
-  background:rgba(255,255,255,.15);
-  backdrop-filter:blur(5px);
-  border-radius:8px; padding:6px 10px;
+  position: fixed;
+  bottom: calc(12px + env(safe-area-inset-bottom,0));
+  right:  calc(12px + env(safe-area-inset-right,0));
+  top: auto; left: auto; transform: none;
+
+  display: flex;
+  align-items: flex-end;           /* align baseline of rotated slider nicely */
+  gap: 10px;
+
+  background: transparent;         /* remove “weird rectangle” */
+  border: 0; padding: 0;
+  border-radius: 0; box-shadow: none;
+  overflow: visible;               /* let rotated slider hug the edge */
+  z-index: 1200;
 }
+
 .music-player button{
-  background:none; border:none; font-size:16px; color:#fff; cursor:pointer;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 10px;
+  padding: 6px 10px;
+  color: #fff;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 16px;
 }
-/* gradient track driven by --vol (works great in WebKit) */
-.music-player input[type="range"]{
-  -webkit-appearance:none; appearance:none;
-  width:160px; height:12px; border-radius:999px;
-  border:1px solid var(--vol-border);
+
+/* Vertical volume slider (pretty gradient) — flush right */
+#volume-slider{
+  -webkit-appearance: none; appearance: none;
+
+  width: 180px;              /* vertical length AFTER rotation */
+  height: 12px;              /* track thickness BEFORE rotation */
+
+  /* gradient track driven by --vol */
+  border-radius: 999px;
+  border: 1px solid var(--vol-border);
   background:
     linear-gradient(
       to right,
@@ -182,80 +242,42 @@ html,body{
       var(--vol-track)    100%
     );
   box-shadow: inset 0 1px rgba(255,255,255,.55), 0 6px 16px rgba(0,0,0,.18);
-  outline:none; cursor:pointer; transition:box-shadow .2s ease;
+  outline: none; cursor: pointer;
+
+    /* anchor on RIGHT edge */
+/* nudge so thumb sits visually flush */
 }
-.music-player input[type="range"]:focus{
-  box-shadow:0 0 0 2px rgba(255,255,255,.65), inset 0 1px rgba(255,255,255,.55), 0 6px 16px rgba(0,0,0,.18);
-}
-/* WebKit thumb */
-.music-player input[type="range"]::-webkit-slider-runnable-track{ height:12px; background:transparent; border-radius:999px; }
-.music-player input[type="range"]::-webkit-slider-thumb{
-  -webkit-appearance:none; width:18px; height:18px; margin-top:-3px; border-radius:50%;
+
+/* WebKit track & thumb */
+#volume-slider::-webkit-slider-runnable-track{ height:12px; background:transparent; border-radius:999px; }
+#volume-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px; height:18px;
+  border-radius:50%;
   border:1px solid rgba(0,0,0,.22);
   background:linear-gradient(135deg,#ffffff,#ffe47b);
   box-shadow:0 0 0 4px rgba(255,255,255,.35), 0 4px 12px rgba(0,0,0,.28);
-  transition:transform .12s ease;
 }
-.music-player input[type="range"]::-webkit-slider-thumb:hover{ transform:scale(1.06); }
-/* Firefox: use progress + track for fill/empty */
-.music-player input[type="range"]::-moz-range-track{
-  height:12px; background:var(--vol-track); border:1px solid var(--vol-border); border-radius:999px;
+
+/* Firefox */
+#volume-slider::-moz-range-track{
+  height:12px; background:var(--vol-track);
+  border:1px solid var(--vol-border); border-radius:999px;
 }
-.music-player input[type="range"]::-moz-range-progress{
-  height:12px; background:linear-gradient(90deg,var(--vol-accent-1),var(--vol-accent-2)); border-radius:999px;
+#volume-slider::-moz-range-progress{
+  height:12px; background:linear-gradient(90deg,var(--vol-accent-1),var(--vol-accent-2));
+  border-radius:999px;
 }
-.music-player input[type="range"]::-moz-range-thumb{
+#volume-slider::-moz-range-thumb{
   width:18px; height:18px; border-radius:50%;
   border:1px solid rgba(0,0,0,.22);
   background:linear-gradient(135deg,#ffffff,#ffe47b);
   box-shadow:0 0 0 4px rgba(255,255,255,.35), 0 4px 12px rgba(0,0,0,.28);
-  transition:transform .12s ease;
-}
-.music-player input[type="range"]::-moz-range-thumb:hover{ transform:scale(1.06); }
-
-/* === MOBILE (<=768px) ===
-   - menu drops down
-   - controls move to top-right stacked
-   - music controls bottom-center
-*/
-@media (max-width:768px){
-  /* Music controls bottom center */
-  .music-player{
-    top:auto;
-    right:50%;
-    bottom:calc(15px + env(safe-area-inset-bottom,0));
-    transform:translateX(50%);
-    background:rgba(255,255,255,.2);
-    padding:8px 12px; border-radius:12px; backdrop-filter:blur(6px);
-  }
-  .music-player input[type="range"]{ width:120px; }
-
-  /* Side menu: dropdown below */
-  .side-menu{
-    top:calc(15px + env(safe-area-inset-top,0));
-    left:calc(15px + env(safe-area-inset-left,0));
-    z-index:1200;
-  }
-  .side-menu.open .menu-inner{
-    position:absolute; top:50px; left:0; right:auto;
-    flex-direction:column;
-    background:rgba(255,255,255,.2);
-    padding:8px; border-radius:10px; backdrop-filter:blur(6px);
-  }
-  .menu-link{ padding:10px 12px; border-radius:12px; } /* bigger tap targets */
-
-  /* Control panel to top-right */
-  .control-panel.glassy{
-    left:auto; right:calc(15px + env(safe-area-inset-right,0));
-    transform:none;
-    top:calc(15px + env(safe-area-inset-top,0));
-    flex-direction:column; gap:10px; padding:10px; z-index:1100;
-  }
-  .control-row{ align-items:flex-start; }
-  .pretty-select{ width:100%; font-size:1rem; padding:8px; border-radius:8px; }
 }
 
-/* extra-small tweak */
+/* Small-screen tweaks */
 @media (max-width:560px){
-  .control-panel.glassy{ gap:10px; padding:8px 10px; }
+  .control-panel.glassy{ flex-wrap: wrap; row-gap: 8px; column-gap: 10px; padding: 8px 10px; }
+  #volume-slider{ width: 150px; }
 }
+.music-player{ flex-direction: column; align-items: flex-end; }

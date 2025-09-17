@@ -172,3 +172,10 @@ body::before{
 @media (max-width:420px){
   .kitty{ width:min(12vmin, 96px); }
 }
+
+.corner-emoji .fish{
+  /* …your existing styles… */
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;   /* <- important on iOS */
+}

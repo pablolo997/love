@@ -323,7 +323,14 @@ requestAnimationFrame(tick);
 
 
 // =========== Fish follower & feeding (drop to feed) ===========
-function moveHeldFish(e){ if (!heldFish) return; heldFish.style.left = e.clientX + 'px'; heldFish.style.top = e.clientY + 'px'; }
+let activePointerId = null;
+
+function moveHeldFish(e){
+  if (!heldFish || e.pointerId !== activePointerId) return;
+  e.preventDefault(); // stop any scroll/gesture
+  heldFish.style.left = e.clientX + 'px';
+  heldFish.style.top  = e.clientY + 'px';
+}
 
 function tryFeedAt(x, y){
   // Find the first hungry cat under the pointer (top-most by DOM order)
@@ -339,27 +346,42 @@ function tryFeedAt(x, y){
   return false;
 }
 
+function cleanupDrag(){
+  document.removeEventListener('pointermove', moveHeldFish);
+  document.removeEventListener('pointerup', releaseFish);
+  document.removeEventListener('pointercancel', releaseFish);
+  activePointerId = null;
+}
+
 function releaseFish(e){
-  if (heldFish){
-    // Attempt feeding on drop location
-    if (gameRunning) tryFeedAt(e.clientX, e.clientY);
-    heldFish.remove(); heldFish = null;
-    document.removeEventListener('pointermove', moveHeldFish);
-    document.removeEventListener('pointerup', releaseFish);
-    document.removeEventListener('pointercancel', releaseFish);
-  }
+  if (!heldFish || e.pointerId !== activePointerId) return;
+  e.preventDefault();
+  if (gameRunning) tryFeedAt(e.clientX, e.clientY);
+  heldFish.remove();
+  heldFish = null;
+  cleanupDrag();
 }
 
 fishSource.addEventListener('pointerdown', (e) => {
-  // Only spawn fish handle if game is running
   if (!gameRunning) return;
+  e.preventDefault();
+
+  activePointerId = e.pointerId;
+  // keep all subsequent pointer events flowing even when finger leaves the element
+  fishSource.setPointerCapture?.(e.pointerId);
+
   heldFish = document.createElement('span');
   heldFish.textContent = '🐟';
   heldFish.className = 'held-fish';
   heldFish.style.left = e.clientX + 'px';
   heldFish.style.top  = e.clientY + 'px';
   document.body.appendChild(heldFish);
-  document.addEventListener('pointermove', moveHeldFish);
-  document.addEventListener('pointerup', releaseFish);
-  document.addEventListener('pointercancel', releaseFish);
+
+  document.addEventListener('pointermove', moveHeldFish,   { passive: false });
+  document.addEventListener('pointerup',   releaseFish,    { passive: false });
+  document.addEventListener('pointercancel', releaseFish,  { passive: false });
+
+  // If the browser ever drops capture, treat it like a release so we don’t get stuck.
+  fishSource.addEventListener('lostpointercapture', releaseFish, { once: true });
 });
+
