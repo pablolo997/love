@@ -1,0 +1,187 @@
+:root {
+      --site-pink: #ffd6e8;
+      /* === Music player (with gradient slider) === */
+      --vol:.5;                          /* updated by JS */
+      --vol-accent-1:#ffe47b;            /* yellow */
+      --vol-accent-2:#ff85f7;            /* pink */
+      --vol-track:rgba(255,255,255,.22); /* glass track */
+      --vol-border:rgba(255,255,255,.6);
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--site-pink);
+      overflow: hidden;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Paw-print background with more spacing and diagonal stagger */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: .16;
+      background-image:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><text x='26' y='108' font-size='80'>🐾</text></svg>"),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><text x='26' y='108' font-size='80'>🐾</text></svg>");
+      background-size: 160px 160px, 160px 160px; /* larger tile = more space */
+      background-position: 0 0, 80px 80px;       /* diagonal offset */
+      background-repeat: repeat, repeat;
+      pointer-events: none;
+    }
+
+    .stage { position: relative; height: 100vh; width: 100vw; }
+
+    .runner {
+      position: absolute;
+      will-change: transform;
+      animation-name: move-across;
+      animation-timing-function: linear;
+      animation-iteration-count: 1; /* one pass, then we remove it */
+      animation-fill-mode: both;
+    }
+
+    .kitty {
+      position: relative;
+      width: min(11vmin, 130px);
+      height: auto;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+      will-change: transform;
+      animation: kitty-antics 6s cubic-bezier(.22,.61,.36,1) infinite;
+      transform-origin: 50% 70%;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.15));
+    }
+
+    .shadow {
+      position: absolute;
+      left: 50%; top: 100%;
+      transform: translate(-50%, -20%);
+      width: 45%; height: 10%;
+      background: rgba(0,0,0,.2);
+      border-radius: 50%; filter: blur(2px);
+      will-change: transform, opacity;
+      animation: shadow-bounce 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes move-across { 0% { transform: translateX(110vw);} 100%{ transform: translateX(-130vw);} }
+
+    /* —— Your chosen antics —— */
+    @keyframes kitty-antics {
+      0%   { transform: translateY(0) rotate(0deg); }
+      10%  { transform: translateY(-48px) rotate(45deg); }
+      24%  { transform: translateY(12px); }
+      36%  { transform: translateY(-48px) rotate(-45deg); }
+      47%  { transform: translateY(12px); }
+      78%  { transform: translateY(-46px) rotate(-360deg); }
+      100% { transform: translateY(0) rotate(360deg); }
+    }
+
+    @keyframes shadow-bounce {
+      0%   { transform: translate(-50%, -20%) scaleX(1)   scaleY(1);  opacity: .35; }
+      10%  { transform: translate(-50%, -20%) scaleX(.82) scaleY(.9); opacity: .25; }
+      24%  { transform: translate(-50%, -20%) scaleX(1.1) scaleY(.8); opacity: .18; }
+      36%  { transform: translate(-50%, -20%) scaleX(.82) scaleY(.9); opacity: .25; }
+      47%  { transform: translate(-50%, -20%) scaleX(1.08) scaleY(.82); opacity: .18; }
+      78%  { transform: translate(-50%, -20%) scaleX(.78) scaleY(.88); opacity: .22; }
+      100% { transform: translate(-50%, -20%) scaleX(1)   scaleY(1);  opacity: .35; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { .runner, .kitty, .shadow { animation: none !important; } }
+
+    /* === Music player (gradient slider like index.html) === */
+    .music-player{
+      position:fixed;
+      top:calc(15px + env(safe-area-inset-top,0));
+      right:calc(15px + env(safe-area-inset-right,0));
+      display:flex; align-items:center; gap:8px;
+      z-index:1050;
+      background:rgba(255,255,255,.15);
+      backdrop-filter:blur(5px);
+      border-radius:8px; padding:6px 10px;
+    }
+    .music-player button{ background:none; border:none; font-size:16px; color:#fff; cursor:pointer; }
+    .music-player input[type="range"]{
+      -webkit-appearance:none; appearance:none;
+      width:160px; height:12px; border-radius:999px;
+      border:1px solid var(--vol-border);
+      background:
+        linear-gradient(
+          to right,
+          var(--vol-accent-1) 0%,
+          var(--vol-accent-2) calc(var(--vol)*100%),
+          var(--vol-track)    calc(var(--vol)*100%),
+          var(--vol-track)    100%
+        );
+      box-shadow: inset 0 1px rgba(255,255,255,.55), 0 6px 16px rgba(0,0,0,.18);
+      outline:none; cursor:pointer; transition:box-shadow .2s ease;
+    }
+    .music-player input[type="range"]:focus{ box-shadow:0 0 0 2px rgba(255,255,255,.65), inset 0 1px rgba(255,255,255,.55), 0 6px 16px rgba(0,0,0,.18); }
+    .music-player input[type="range"]::-webkit-slider-runnable-track{ height:12px; background:transparent; border-radius:999px; }
+    .music-player input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none; width:18px; height:18px; margin-top:-3px; border-radius:50%;
+      border:1px solid rgba(0,0,0,.22);
+      background:linear-gradient(135deg,#ffffff,#ffe47b);
+      box-shadow:0 0 0 4px rgba(255,255,255,.35), 0 4px 12px rgba(0,0,0,.28);
+      transition:transform .12s ease;
+    }
+    .music-player input[type="range"]::-webkit-slider-thumb:hover{ transform:scale(1.06); }
+    .music-player input[type="range"]::-moz-range-track{ height:12px; background:var(--vol-track); border:1px solid var(--vol-border); border-radius:999px; }
+    .music-player input[type="range"]::-moz-range-progress{ height:12px; background:linear-gradient(90deg,var(--vol-accent-1),var(--vol-accent-2)); border-radius:999px; }
+    .music-player input[type="range"]::-moz-range-thumb{
+      width:18px; height:18px; border-radius:50%;
+      border:1px solid rgba(0,0,0,.22);
+      background:linear-gradient(135deg,#ffffff,#ffe47b);
+      box-shadow:0 0 0 4px rgba(255,255,255,.35), 0 4px 12px rgba(0,0,0,.28);
+      transition:transform .12s ease;
+    }
+    .music-player input[type="range"]::-moz-range-thumb:hover{ transform:scale(1.06); }
+
+    @media (max-width:768px){
+      .music-player{
+        top:auto; right:50%; bottom:calc(15px + env(safe-area-inset-bottom,0)); transform:translateX(50%);
+        background:rgba(255,255,255,.2); padding:8px 12px; border-radius:12px; backdrop-filter:blur(6px);
+      }
+      .music-player input[type="range"]{ width:120px; }
+    }
+
+/* Center-bottom fish, larger; hide bucket */
+.corner-emoji{
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom,0));
+  transform: translateX(-50%);
+  user-select: none;
+  text-align: center;
+  z-index: 1000;
+  width: auto;              /* override old dimensions */
+  height: auto;             /* override old dimensions */
+}
+
+.corner-emoji .wrap{
+  position: relative;
+  width: auto;
+  height: auto;
+}
+
+.corner-emoji .bucket{
+  display: none !important; /* remove bucket */
+}
+
+.corner-emoji .fish{
+  position: static;         /* no absolute positioning */
+  display: inline-block;
+  font-size: 5.2rem;        /* bigger fish at bottom */
+  line-height: 1;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.15));
+}
+
+    /* Fish held-follow animation */
+    .held-fish { position: fixed; pointer-events: none; font-size: 1.8rem; z-index: 100; animation: fish-flip .6s linear infinite; }
+    @keyframes fish-flip { 0% { transform: translate(-50%, -100%) scaleX(1); } 50% { transform: translate(-50%, -100%) scaleX(-1); } 100% { transform: translate(-50%, -100%) scaleX(1); } }

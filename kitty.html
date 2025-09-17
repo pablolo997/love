@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kitty Cat Zone</title>
+  <link rel="stylesheet" href="kitty/kitty.css" />
+</head>
+<body>
+  <!-- Music controls: single track with gradient volume slider -->
+  <div class="music-player">
+    <button id="playToggle" type="button">▶︎</button>
+    <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Volume" />
+  </div>
+
+  <div class="stage" aria-label="Kitty stage"></div>
+
+  <!-- Bucket with fish (fish is clickable/holdable) -->
+  <div class="corner-emoji" aria-hidden="true">
+    <div class="wrap">
+      <span class="bucket">🪣</span>
+      <span class="fish" id="fishSource">🐟</span>
+    </div>
+  </div>
+
+  <!-- Single music track -->
+  <audio id="player" preload="none" src="kitty/kitty.mp3" autoplay loop></audio>
+
+  <!-- App logic -->
+  <script src="kitty/kitty.js" defer></script>
+</body>
+</html>
