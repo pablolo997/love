@@ -2,8 +2,7 @@
 html, body{
   margin:0;
   background: rgb(223,118,209);
-  /* mobile overflow hardening */
-  overflow: hidden;
+  overflow: hidden;           /* mobile overflow hardening */
   height: 100dvh;
   overscroll-behavior: none;
 }
@@ -69,7 +68,7 @@ html, body{
   touch-action: manipulation;
 }
 .affirmation{
-  position: fixed;                /* fixed so offscreen text never changes layout */
+  position: fixed;                /* off-screen text never changes layout */
   font-size:1.2rem; color:#fff;
   text-shadow:0 0 4px rgba(0,0,0,.5);
   pointer-events:none;
@@ -101,11 +100,10 @@ html, body{
   box-shadow:0 6px 18px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.4);
   backdrop-filter:blur(8px);
 }
-/* panel pops to the RIGHT of the heart button */
 .menu-inner{
   position:absolute;
   top:0;
-  left:56px;                /* shove panel to the right of the button */
+  left:56px;                /* open to the right of the heart */
   width:220px;
   max-height:70vh;
   overflow:auto;
@@ -128,29 +126,26 @@ html, body{
 }
 .menu-link:hover{ background:rgba(255,255,255,.16) }
 
-/* === Control panel (Color + Outline) — bottom-left inline === */
+/* === Control panel — TOP CENTER (desktop), BOTTOM CENTER (mobile) === */
 .control-panel.glassy{
   position: fixed;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0));
-  left:   calc(12px + env(safe-area-inset-left, 0));
-  top: auto; right: auto; transform: none;
+  top: calc(16px + env(safe-area-inset-top, 0));
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1100;
 
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
   border:1px solid rgba(255,255,255,.55);
   background:rgba(255,255,255,.18);
   box-shadow:0 12px 28px rgba(0,0,0,.25);
   backdrop-filter: blur(10px);
 }
 .control-row{
-  display: flex;
-  flex-direction: row;      /* label + select inline */
-  align-items: center;
-  gap: 8px;
+  display:flex; flex-direction:row; align-items:center; gap:8px;
 }
 .control-row .gradient-text{ white-space: nowrap; }
 
@@ -186,7 +181,7 @@ html, body{
 /* Make sure UI is interactable over canvas */
 .side-menu, .control-panel, .music-player{ pointer-events:auto; }
 
-/* === Music player (bottom-right, vertical slider, no glass bg) === */
+/* === Music player (TOP RIGHT) === */
 :root{
   --vol:.5;                          /* updated by JS */
   --vol-accent-1:#ffe47b;            /* yellow */
@@ -197,42 +192,28 @@ html, body{
 
 .music-player{
   position: fixed;
-  bottom: calc(12px + env(safe-area-inset-bottom,0));
-  right:  calc(12px + env(safe-area-inset-right,0));
-  top: auto; left: auto; transform: none;
-
-  display: flex;
-  align-items: flex-end;           /* align baseline of rotated slider nicely */
-  gap: 10px;
-
-  background: transparent;         /* remove “weird rectangle” */
-  border: 0; padding: 0;
-  border-radius: 0; box-shadow: none;
-  overflow: visible;               /* let rotated slider hug the edge */
+  top:  calc(16px + env(safe-area-inset-top,0));
+  right:calc(16px + env(safe-area-inset-right,0));
   z-index: 1200;
+
+  display:flex; align-items:center; gap:8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.55);
+  background: rgba(255,255,255,.18);
+  box-shadow: 0 12px 28px rgba(0,0,0,.25);
+  backdrop-filter: blur(10px);
 }
 
 .music-player button{
-  background: rgba(255,255,255,.18);
-  border: 1px solid rgba(255,255,255,.4);
-  border-radius: 10px;
-  padding: 6px 10px;
-  color: #fff;
-  cursor: pointer;
-  line-height: 1;
-  font-size: 16px;
+  background:none; border:none; font-size:16px; color:#fff; cursor:pointer;
 }
 
-/* Vertical volume slider (pretty gradient) — flush right */
-#volume-slider{
-  -webkit-appearance: none; appearance: none;
-
-  width: 180px;              /* vertical length AFTER rotation */
-  height: 12px;              /* track thickness BEFORE rotation */
-
-  /* gradient track driven by --vol */
-  border-radius: 999px;
-  border: 1px solid var(--vol-border);
+/* Horizontal slider (desktop default) */
+.music-player input[type="range"]{
+  -webkit-appearance:none; appearance:none;
+  width:160px; height:12px; border-radius:999px;
+  border:1px solid var(--vol-border);
   background:
     linear-gradient(
       to right,
@@ -242,42 +223,93 @@ html, body{
       var(--vol-track)    100%
     );
   box-shadow: inset 0 1px rgba(255,255,255,.55), 0 6px 16px rgba(0,0,0,.18);
-  outline: none; cursor: pointer;
-
-    /* anchor on RIGHT edge */
-/* nudge so thumb sits visually flush */
+  outline:none; cursor:pointer; transition:box-shadow .2s ease;
 }
-
-/* WebKit track & thumb */
-#volume-slider::-webkit-slider-runnable-track{ height:12px; background:transparent; border-radius:999px; }
-#volume-slider::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  width:18px; height:18px;
-  border-radius:50%;
+.music-player input[type="range"]:focus{
+  box-shadow:0 0 0 2px rgba(255,255,255,.65), inset 0 1px rgba(255,255,255,.55), 0 6px 16px rgba(0,0,0,.18);
+}
+.music-player input[type="range"]::-webkit-slider-runnable-track{ height:12px; background:transparent; border-radius:999px; }
+.music-player input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px; margin-top:-3px; border-radius:50%;
   border:1px solid rgba(0,0,0,.22);
   background:linear-gradient(135deg,#ffffff,#ffe47b);
   box-shadow:0 0 0 4px rgba(255,255,255,.35), 0 4px 12px rgba(0,0,0,.28);
+  transition:transform .12s ease;
 }
-
-/* Firefox */
-#volume-slider::-moz-range-track{
-  height:12px; background:var(--vol-track);
-  border:1px solid var(--vol-border); border-radius:999px;
+.music-player input[type="range"]::-webkit-slider-thumb:hover{ transform:scale(1.06); }
+.music-player input[type="range"]::-moz-range-track{
+  height:12px; background:var(--vol-track); border:1px solid var(--vol-border); border-radius:999px;
 }
-#volume-slider::-moz-range-progress{
-  height:12px; background:linear-gradient(90deg,var(--vol-accent-1),var(--vol-accent-2));
-  border-radius:999px;
+.music-player input[type="range"]::-moz-range-progress{
+  height:12px; background:linear-gradient(90deg,var(--vol-accent-1),var(--vol-accent-2)); border-radius:999px;
 }
-#volume-slider::-moz-range-thumb{
+.music-player input[type="range"]::-moz-range-thumb{
   width:18px; height:18px; border-radius:50%;
   border:1px solid rgba(0,0,0,.22);
   background:linear-gradient(135deg,#ffffff,#ffe47b);
   box-shadow:0 0 0 4px rgba(255,255,255,.35), 0 4px 12px rgba(0,0,0,.28);
+  transition:transform .12s ease;
+}
+.music-player input[type="range"]::-moz-range-thumb:hover{ transform:scale(1.06); }
+
+/* === MOBILE (≤768px)
+     - Player stays top-right, switches to vertical column
+     - Slider turns vertical AND container fits it (tall, narrow)
+     - Control panel moves to bottom-center
+================================================================ */
+@media (max-width:768px){
+  /* Player becomes a tall, narrow glass card that fits the vertical slider */
+  .music-player{
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    width: auto;
+    min-width: 56px;              /* narrow, enough for thumb halo */
+  }
+
+  /* KEY: set intrinsic layout size to tall/narrow BEFORE rotation
+     so the glass rectangle wraps perfectly */
+  #volume-slider{
+    -webkit-appearance:none; appearance:none;
+    width: 12px;                  /* narrow layout width */
+    height: 180px;                /* tall layout height */
+    transform-origin: 50% 50%;
+    margin: 0;                    /* no extra offsets */
+  }
+  #volume-slider::-webkit-slider-runnable-track{ height:12px; }
+  #volume-slider::-webkit-slider-thumb{ margin-top:0; }
+
+  /* Control panel to bottom-center on small screens */
+  .control-panel.glassy{
+    top: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0));
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 12px;
+    padding: 8px 10px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
 }
 
-/* Small-screen tweaks */
+/* Extra small tweak */
 @media (max-width:560px){
-  .control-panel.glassy{ flex-wrap: wrap; row-gap: 8px; column-gap: 10px; padding: 8px 10px; }
-  #volume-slider{ width: 150px; }
+  #volume-slider{ height: 160px; }
 }
-.music-player{ flex-direction: column; align-items: flex-end; }
+
+/* Mobile: hide the volume slider, keep a compact player card top-right */
+@media (max-width: 768px){
+  #volume-slider{
+    display: none !important;
+  }
+  .music-player{
+    /* go back to a small horizontal card with just the play/pause button */
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+}
