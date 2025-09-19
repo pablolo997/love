@@ -52,6 +52,26 @@ function updateTimer(now){
 
 let unfedCount = 0;
 
+// ==== Background music @ 20% (no slider) ====
+const bgm = document.getElementById('player'); // <audio id="player" loop>
+let audioCtx, gainNode, srcNode;
+
+function initBgmGraph() {
+  if (!bgm || audioCtx) return; // only once
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (AC) {
+    audioCtx = new AC();
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0.2;                 // 20% volume
+    srcNode = audioCtx.createMediaElementSource(bgm);
+    srcNode.connect(gainNode).connect(audioCtx.destination);
+  } else {
+    // very old browsers: fall back to element volume
+    try { bgm.volume = 0.2; } catch {}
+  }
+}
+
+
 function startSession(){
   // reset
   setScore(0);
@@ -71,6 +91,11 @@ function startSession(){
     cats.pop();
   }
   startBtn.disabled = true; startBtn.textContent = 'Good luck!';
+
+  initBgmGraph();
+  try { audioCtx && audioCtx.resume && audioCtx.resume(); } catch {}
+  try { bgm.volume = 0.2; } catch {}          // desktop fallback
+  bgm && bgm.play && bgm.play().catch(()=>{});
 }
 
 
@@ -144,19 +169,18 @@ function showEndBanner(){
 }
 
 // =========== Spawn/motion settings (rAF, like bubbles) ===========
-const CONCURRENT_CATS   = 5;     // exact population while running
+const CONCURRENT_CATS   = 8;     // exact population while running
 const SPEED_MIN_PX_S    = 120;
 const SPEED_MAX_PX_S    = 320;   // wider variability on upper bound
 const SPAWN_BAND_VH     = [20, 80];
 const STOP_X_MIN = () => window.innerWidth * 0.15;
-const STOP_X_MAX = () => window.innerWidth * 0.75;
+const STOP_X_MAX = () => window.innerWidth * 0.60;
 const SPAWN_EVERY_MS = 600;      // pace out early spawns
 
 // State
 const cats = []; // items: { runner, x, speed, state, canStopAfter, stopX, hungryExpireAt, fadeUntil }
 let lastT = performance.now();
 let spawnAccumulator = 0;
-let heldFish = null; // floating emoji while held
 
 // Utils
 const rand = (min, max) => Math.random() * (max - min) + min;
@@ -322,66 +346,115 @@ function tick(now){
 requestAnimationFrame(tick);
 
 
-// =========== Fish follower & feeding (drop to feed) ===========
-let activePointerId = null;
+// =========== Fish follower & feeding (touch-on-collision) ===========
+let heldFish = null;
+let dragging = false;
 
-function moveHeldFish(e){
-  if (!heldFish || e.pointerId !== activePointerId) return;
-  e.preventDefault(); // stop any scroll/gesture
-  heldFish.style.left = e.clientX + 'px';
-  heldFish.style.top  = e.clientY + 'px';
+function removeHeld(){
+  if (heldFish){ heldFish.remove(); heldFish = null; }
+  dragging = false;
+  window.removeEventListener('pointermove', onPM);
+  window.removeEventListener('pointerup', onPE);
+  window.removeEventListener('pointercancel', onPE);
+  window.removeEventListener('mouseup', onMU);
+  window.removeEventListener('touchmove', onTM);
+  window.removeEventListener('touchend', onTE);
+  window.removeEventListener('touchcancel', onTE);
+  window.removeEventListener('blur', onBlur, true);
+  document.removeEventListener('visibilitychange', onVis, true);
 }
 
-function tryFeedAt(x, y){
-  // Find the first hungry cat under the pointer (top-most by DOM order)
-  for (let i = cats.length - 1; i >= 0; i--) {
-    const c = cats[i];
-    if (c.state !== 'hungry') continue;
-    const img = c.runner.querySelector('.kitty');
-    const r = img.getBoundingClientRect();
-    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom){
-      return feedCat(c);
-    }
-  }
-  return false;
-}
-
-function cleanupDrag(){
-  document.removeEventListener('pointermove', moveHeldFish);
-  document.removeEventListener('pointerup', releaseFish);
-  document.removeEventListener('pointercancel', releaseFish);
-  activePointerId = null;
-}
-
-function releaseFish(e){
-  if (!heldFish || e.pointerId !== activePointerId) return;
-  e.preventDefault();
-  if (gameRunning) tryFeedAt(e.clientX, e.clientY);
-  heldFish.remove();
-  heldFish = null;
-  cleanupDrag();
-}
-
-fishSource.addEventListener('pointerdown', (e) => {
-  if (!gameRunning) return;
-  e.preventDefault();
-
-  activePointerId = e.pointerId;
-  // keep all subsequent pointer events flowing even when finger leaves the element
-  fishSource.setPointerCapture?.(e.pointerId);
-
+function createHeld(x, y){
   heldFish = document.createElement('span');
   heldFish.textContent = '🐟';
   heldFish.className = 'held-fish';
-  heldFish.style.left = e.clientX + 'px';
-  heldFish.style.top  = e.clientY + 'px';
+  heldFish.style.left = x + 'px';
+  heldFish.style.top  = y + 'px';
   document.body.appendChild(heldFish);
+  dragging = true;
+}
 
-  document.addEventListener('pointermove', moveHeldFish,   { passive: false });
-  document.addEventListener('pointerup',   releaseFish,    { passive: false });
-  document.addEventListener('pointercancel', releaseFish,  { passive: false });
+function moveHeld(x, y){
+  if (!heldFish) return;
+  heldFish.style.left = x + 'px';
+  heldFish.style.top  = y + 'px';
+  // after moving, check for collision with any hungry kitty
+  checkHungryCollision();
+}
 
-  // If the browser ever drops capture, treat it like a release so we don’t get stuck.
-  fishSource.addEventListener('lostpointercapture', releaseFish, { once: true });
-});
+function feedAndEnd(cat){
+  feedCat(cat);     // your existing success logic
+  removeHeld();     // delete fish + listeners immediately
+}
+
+/* collision: heldFish vs any hungry cat */
+function checkHungryCollision(){
+  if (!heldFish || !gameRunning) return;
+  const fishRect = heldFish.getBoundingClientRect();
+  for (let i = cats.length - 1; i >= 0; i--){
+    const c = cats[i];
+    if (c.state !== 'hungry') continue;
+    const img = c.runner.querySelector('.kitty');
+    const k = img.getBoundingClientRect();
+    const overlap = !(k.right < fishRect.left || k.left > fishRect.right || k.bottom < fishRect.top || k.top > fishRect.bottom);
+    if (overlap){
+      feedAndEnd(c);
+      return; // stop after feeding one
+    }
+  }
+}
+
+/* pointer (primary path) */
+function onPM(e){ if (!dragging) return; if (e.cancelable) e.preventDefault(); moveHeld(e.clientX, e.clientY); }
+function onPE(){ if (!dragging) return; removeHeld(); }  // releasing without feeding just drops it
+
+/* mouse fallback */
+function onMU(e){ if (!dragging) return; e.preventDefault(); removeHeld(); }
+
+/* touch fallback (older Safari that might not do PointerEvent well) */
+function onTM(e){
+  if (!dragging) return;
+  const t = e.changedTouches[0]; if (!t) return;
+  e.preventDefault();
+  moveHeld(t.clientX, t.clientY);
+}
+function onTE(){ if (!dragging) return; removeHeld(); }
+
+/* emergency cleanup */
+function onBlur(){ if (dragging) removeHeld(); }
+function onVis(){ if (document.hidden && dragging) removeHeld(); }
+
+/* start drag on press */
+fishSource.addEventListener('pointerdown', (e) => {
+  if (!gameRunning) return;
+  if (e.cancelable) e.preventDefault();
+  removeHeld(); // nuke any stray fish from a previous drag
+  createHeld(e.clientX, e.clientY);
+
+  window.addEventListener('pointermove', onPM, { passive:false });
+  window.addEventListener('pointerup',   onPE, { passive:false });
+  window.addEventListener('pointercancel', onPE, { passive:false });
+  window.addEventListener('mouseup', onMU, { passive:false });
+
+  window.addEventListener('blur', onBlur, true);
+  document.addEventListener('visibilitychange', onVis, true);
+}, { passive:false });
+
+/* touch-only fallback if PointerEvent is missing */
+if (!window.PointerEvent){
+  fishSource.addEventListener('touchstart', (e) => {
+    if (!gameRunning) return;
+    const t = e.changedTouches[0]; if (!t) return;
+    e.preventDefault();
+    removeHeld();
+    createHeld(t.clientX, t.clientY);
+
+    window.addEventListener('touchmove', onTM, { passive:false });
+    window.addEventListener('touchend',  onTE, { passive:false });
+    window.addEventListener('touchcancel', onTE, { passive:false });
+
+    window.addEventListener('blur', onBlur, true);
+    document.addEventListener('visibilitychange', onVis, true);
+  }, { passive:false });
+}
 

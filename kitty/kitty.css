@@ -174,8 +174,10 @@ body::before{
 }
 
 .corner-emoji .fish{
-  /* …your existing styles… */
   -webkit-user-select: none;
   user-select: none;
-  touch-action: none;   /* <- important on iOS */
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  touch-action: none;
 }
+.held-fish{ pointer-events: none; } /* so it never blocks the release */
